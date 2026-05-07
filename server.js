@@ -24,6 +24,7 @@ const limiter = rateLimit({
 app.use('/activate', limiter);
 
 // Routes
+app.get('/', (req, res) => res.redirect('/admin.html'));
 app.use('/', require('./routes/licenseRoutes'));
 app.use('/auth', require('./routes/authRoutes'));
 
