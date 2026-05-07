@@ -10,7 +10,17 @@ const sequelize = require('./config/db');
 const app = express();
 
 // Security Middlewares
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "script-src": ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],
+            "style-src": ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com", "fonts.googleapis.com"],
+            "font-src": ["'self'", "cdnjs.cloudflare.com", "fonts.gstatic.com"],
+            "img-src": ["'self'", "data:", "https:"]
+        },
+    },
+}));
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
