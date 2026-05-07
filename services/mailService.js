@@ -1,15 +1,15 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: process.env.MAIL_PORT,
-    secure: process.env.MAIL_PORT == 465, // true for 465, false for 587
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    secure: false, // true for 465, false for 587
     auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_API_KEY,
     },
     tls: {
-        rejectUnauthorized: false // Helps with some VPS network restrictions
+        rejectUnauthorized: false
     }
 });
 
@@ -70,7 +70,7 @@ exports.sendLicenseEmail = async (email, keys, planType) => {
 
     try {
         await transporter.sendMail({
-            from: process.env.MAIL_FROM,
+            from: `"${process.env.EMAIL_NAME || 'Inzeedo Support'}" <${process.env.EMAIL_FROM}>`,
             to: email,
             subject: '🚀 Your Inzeedo POS License Keys are Ready!',
             html: htmlContent,
