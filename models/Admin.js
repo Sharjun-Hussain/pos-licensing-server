@@ -19,6 +19,12 @@ const Admin = sequelize.define('Admin', {
                 const salt = await bcrypt.genSalt(10);
                 admin.password = await bcrypt.hash(admin.password, salt);
             }
+        },
+        beforeUpdate: async (admin) => {
+            if (admin.changed('password')) {
+                const salt = await bcrypt.genSalt(10);
+                admin.password = await bcrypt.hash(admin.password, salt);
+            }
         }
     }
 });
