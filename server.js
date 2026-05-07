@@ -7,7 +7,10 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const sequelize = require('./config/db');
 
+const logger = require('./utils/logger');
 const app = express();
+
+const SECRET_TOKEN = process.env.APP_SECRET_TOKEN || 'INZEEDO_SECURE_2026_PROD';
 
 // Security Middlewares
 app.use(helmet({
@@ -26,9 +29,19 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Request Logger (Production Debugging)
+// Security & Professional Logger Middleware
 app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - From: ${req.ip}`);
+    const token = req.headers['x-inzeedo-token'];
+    
+    // Log every request
+    logger.info(`${req.method} ${req.url} - IP: ${req.ip} - Token: ${token ? 'Present' : 'Missing'}`);
+
+    if (req.path === '/activate' || req.path === '/sync') {
+        if (token !== SECRET_TOKEN) {
+            logger.warn(`🚫 Unauthorized access attempt from ${req.ip} - Invalid Token`);
+            return res.status(401).json({ success: false, message: 'Unauthorized access.' });
+        }
+    }
     next();
 });
 
