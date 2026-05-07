@@ -26,6 +26,12 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Request Logger (Production Debugging)
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - From: ${req.ip}`);
+    next();
+});
+
 // Rate Limiting (Prevent brute force on activation)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
