@@ -71,6 +71,15 @@ exports.sync = async (req, res) => {
     }
 };
 
+exports.list = async (req, res) => {
+    try {
+        const licenses = await License.findAll({ order: [['createdAt', 'DESC']] });
+        res.json({ success: true, licenses });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
 exports.generate = async (req, res) => {
     const { count, email, planType, billingCycle, expiryMonths } = req.body;
     const keys = [];

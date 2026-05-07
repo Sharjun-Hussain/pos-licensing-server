@@ -8,6 +8,7 @@ router.post('/activate', licenseController.activate);
 router.post('/sync', licenseController.sync);
 
 // Protected Admin Endpoints
+router.get('/admin/list', authMiddleware, licenseController.list);
 router.post('/admin/generate', authMiddleware, licenseController.generate);
 router.post('/admin/reset', authMiddleware, licenseController.reset);
 
