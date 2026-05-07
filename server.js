@@ -15,6 +15,7 @@ app.use(helmet({
         directives: {
             ...helmet.contentSecurityPolicy.getDefaultDirectives(),
             "script-src": ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],
+            "script-src-attr": ["'unsafe-inline'"],
             "style-src": ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com", "fonts.googleapis.com"],
             "font-src": ["'self'", "cdnjs.cloudflare.com", "fonts.gstatic.com"],
             "img-src": ["'self'", "data:", "https:"]
