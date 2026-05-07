@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+dist/
+build/
+
+# Environment secrets
+.env
+.env.local
+.env.*.local
+
+# Database
+*.sqlite
+*.sqlite-journal
+
+# Security Keys (VERY IMPORTANT)
+keys/private_key.pem
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
