@@ -113,7 +113,11 @@
                     Authenticate Session
                 </button>
             </div>
-            <p id="login-error" class="text-red-400 mt-6 text-sm hidden font-medium">Invalid credentials. Please try again.</p>
+            <!-- Debug Log Area -->
+            <div id="debug-log" class="mt-6 p-3 bg-black/50 rounded-lg text-[10px] font-mono text-emerald-500 text-left h-24 overflow-y-auto border border-white/5">
+                > System ready...
+            </div>
+            <p id="login-error" class="text-red-400 mt-4 text-sm hidden font-medium"></p>
         </div>
     </div>
 
@@ -241,39 +245,48 @@
             setTimeout(() => toast.remove(), 4000);
         }
 
+        function logToScreen(msg) {
+            const el = document.getElementById('debug-log');
+            el.innerHTML += `<br>> ${msg}`;
+            el.scrollTop = el.scrollHeight;
+        }
+
         async function login() {
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
             const errorEl = document.getElementById('login-error');
             const btn = document.querySelector('#login-overlay button');
             
-            console.log('Attempting login for:', user);
+            logToScreen('Starting authentication...');
             btn.innerText = 'Authenticating...';
             btn.disabled = true;
             errorEl.classList.add('hidden');
             
             try {
+                logToScreen(`Sending POST to /auth/login...`);
                 const res = await fetch('/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: user, password: pass })
                 });
                 
+                logToScreen(`Status received: ${res.status}`);
                 const data = await res.json();
-                console.log('Server response:', data);
-
+                
                 if (data.success) {
+                    logToScreen('Success! Finalizing session...');
                     token = data.token;
                     localStorage.setItem('admin_token', token);
                     initDashboard();
-                    showToast('Welcome back, Admin!');
                 } else {
+                    logToScreen(`Failed: ${data.message}`);
                     errorEl.innerText = data.message || 'Invalid Credentials';
                     errorEl.classList.remove('hidden');
                 }
             } catch (err) { 
+                logToScreen(`NETWORK ERROR: ${err.message}`);
                 console.error('Login Error:', err);
-                showToast('Server connection failed. Is the server running?', 'error'); 
+                showToast('Server connection failed.', 'error'); 
             } finally {
                 btn.innerText = 'Authenticate Session';
                 btn.disabled = false;
