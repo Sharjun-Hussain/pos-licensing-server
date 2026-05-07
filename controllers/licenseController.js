@@ -3,6 +3,7 @@ const forge = require('node-forge');
 const fs = require('fs');
 const path = require('path');
 const { Op } = require('sequelize');
+const mailService = require('../services/mailService');
 
 // Load Private Key with safety check
 let privateKey;
@@ -162,6 +163,10 @@ exports.generate = async (req, res) => {
         }
         
         console.log(`🎁 Generated ${batchCount} keys for ${email}`);
+        
+        // Send Email to customer
+        await mailService.sendLicenseEmail(email, keys, planType || 'Pro');
+
         return res.json({ success: true, keys });
     } catch (err) {
         console.error('Generation error:', err);
