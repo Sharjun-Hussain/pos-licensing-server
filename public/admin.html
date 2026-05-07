@@ -245,6 +245,12 @@
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
             const errorEl = document.getElementById('login-error');
+            const btn = document.querySelector('#login-overlay button');
+            
+            console.log('Attempting login for:', user);
+            btn.innerText = 'Authenticating...';
+            btn.disabled = true;
+            errorEl.classList.add('hidden');
             
             try {
                 const res = await fetch('/auth/login', {
@@ -252,15 +258,26 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: user, password: pass })
                 });
+                
                 const data = await res.json();
+                console.log('Server response:', data);
+
                 if (data.success) {
                     token = data.token;
                     localStorage.setItem('admin_token', token);
                     initDashboard();
+                    showToast('Welcome back, Admin!');
                 } else {
+                    errorEl.innerText = data.message || 'Invalid Credentials';
                     errorEl.classList.remove('hidden');
                 }
-            } catch (err) { showToast('Server connection failed', 'error'); }
+            } catch (err) { 
+                console.error('Login Error:', err);
+                showToast('Server connection failed. Is the server running?', 'error'); 
+            } finally {
+                btn.innerText = 'Authenticate Session';
+                btn.disabled = false;
+            }
         }
 
         function logout() {
