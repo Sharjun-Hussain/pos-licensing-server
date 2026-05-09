@@ -15,13 +15,17 @@ const License = sequelize.define('License', {
         type: DataTypes.UUID,
         allowNull: true
     },
+    organizationName: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     customerEmail: {
         type: DataTypes.STRING,
         allowNull: false
     },
     planType: {
-        type: DataTypes.ENUM('Basic', 'Pro', 'Enterprise', 'Trial'),
-        defaultValue: 'Trial'
+        type: DataTypes.ENUM('Essentials', 'Premium', 'Enterprise', 'Trial'),
+        defaultValue: 'Essentials'
     },
     billingCycle: {
         type: DataTypes.ENUM('Monthly', 'Yearly', 'Lifetime'),

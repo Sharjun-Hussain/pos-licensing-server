@@ -138,23 +138,26 @@ exports.list = async (req, res) => {
  * Generates a batch of new license keys
  */
 exports.generate = async (req, res) => {
-    const { count, email, planType, billingCycle, expiryMonths } = req.body;
+    const { organizationName, userCount, email, planType, billingCycle, expiryMonths } = req.body;
     
     if (!email) return res.status(400).json({ success: false, message: 'Customer email is required.' });
+    if (!organizationName) return res.status(400).json({ success: false, message: 'Organization name is required.' });
 
     const keys = [];
     const expiry = new Date();
     expiry.setMonth(expiry.getMonth() + (expiryMonths || 12));
 
     try {
-        const batchCount = Math.min(parseInt(count || 1), 50); // Limit to 50 at a time
+        const count = parseInt(userCount || 1);
+        const batchCount = Math.min(count, 100); // Increased limit to 100
 
         for (let i = 0; i < batchCount; i++) {
             const key = `POS-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
             await License.create({ 
                 key, 
+                organizationName,
                 customerEmail: email, 
-                planType: planType || 'Pro',
+                planType: planType || 'Essentials',
                 billingCycle: billingCycle || 'Yearly',
                 expiry, 
                 status: 'pending' 
@@ -162,10 +165,10 @@ exports.generate = async (req, res) => {
             keys.push(key);
         }
         
-        console.log(`🎁 Generated ${batchCount} keys for ${email}`);
+        console.log(`🎁 Generated ${batchCount} keys for ${organizationName} (${email})`);
         
         // Send Email to customer
-        await mailService.sendLicenseEmail(email, keys, planType || 'Pro');
+        await mailService.sendLicenseEmail(email, keys, planType || 'Essentials', organizationName, new Date());
 
         return res.json({ success: true, keys });
     } catch (err) {
