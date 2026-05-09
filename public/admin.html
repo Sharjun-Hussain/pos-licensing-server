@@ -144,7 +144,7 @@
             </div>
         </nav>
 
-        <main class="p-10 max-w-7xl mx-auto space-y-10">
+        <main class="p-10 space-y-10 w-full">
             <!-- Header & Stats -->
             <div class="flex flex-col md:flex-row justify-between items-end gap-6">
                 <div class="space-y-1">
@@ -338,35 +338,68 @@
 
         function renderTable(licenses) {
             const tbody = document.getElementById('license-table');
-            tbody.innerHTML = licenses.map(l => `
-                <tr class="hover:bg-white/[0.02] transition-all group">
-                    <td class="px-8 py-6">
-                        <div class="flex items-center gap-3">
-                            <span class="font-mono font-bold text-emerald-400 bg-emerald-500/5 px-3 py-1 rounded-lg">${l.key}</span>
-                        </div>
-                    </td>
-                    <td class="px-8 py-6">
-                        <div class="text-sm font-bold text-slate-200">${l.organizationName || '<span class="text-slate-600 font-normal italic">Standalone</span>'}</div>
-                        <div class="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">${l.planType} Plan</div>
-                    </td>
-                    <td class="px-8 py-6">
-                        <div class="text-sm font-medium text-slate-400">${l.customerEmail}</div>
-                    </td>
-                    <td class="px-8 py-6 text-xs font-mono text-slate-500">${l.hwid ? l.hwid.substr(0,16)+'...' : '<span class="text-slate-700 italic">Unlinked</span>'}</td>
-                    <td class="px-8 py-6">
-                        <span class="status-badge px-3 py-1 rounded-full ${getStatusStyle(l.status)}">
-                            ${l.status}
-                        </span>
-                    </td>
-                    <td class="px-8 py-6 text-sm text-slate-400">${new Date(l.expiry).toLocaleDateString()}</td>
-                    <td class="px-8 py-6 text-right">
-                        <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                            ${l.hwid ? `<button onclick="resetHWID('${l.key}')" title="Reset Hardware ID" class="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white transition-all"><i class="fas fa-rotate"></i></button>` : ''}
-                            <button class="w-9 h-9 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"><i class="fas fa-trash-can"></i></button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+            
+            // Sort by Organization Name, then by Date
+            const sortedLicenses = [...licenses].sort((a, b) => {
+                const orgA = (a.organizationName || '').toLowerCase();
+                const orgB = (b.organizationName || '').toLowerCase();
+                if (orgA < orgB) return -1;
+                if (orgA > orgB) return 1;
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
+
+            let html = '';
+            let currentOrg = null;
+
+            sortedLicenses.forEach(l => {
+                const orgName = l.organizationName || 'Standalone / Individual';
+                
+                // Add Organization Header Row if it changes
+                if (orgName !== currentOrg) {
+                    currentOrg = orgName;
+                    html += `
+                        <tr class="bg-emerald-500/5 border-y border-emerald-500/10">
+                            <td colspan="7" class="px-8 py-3">
+                                <div class="flex items-center gap-3">
+                                    <i class="fas fa-building text-emerald-500 text-xs"></i>
+                                    <span class="text-[10px] uppercase font-black tracking-[3px] text-emerald-500">${orgName}</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                html += `
+                    <tr class="hover:bg-white/[0.02] transition-all group">
+                        <td class="px-8 py-6">
+                            <div class="flex items-center gap-3">
+                                <span class="font-mono font-bold text-emerald-400 bg-emerald-500/5 px-3 py-1 rounded-lg">${l.key}</span>
+                            </div>
+                        </td>
+                        <td class="px-8 py-6">
+                            <div class="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">${l.planType} Plan</div>
+                        </td>
+                        <td class="px-8 py-6">
+                            <div class="text-sm font-medium text-slate-400">${l.customerEmail}</div>
+                        </td>
+                        <td class="px-8 py-6 text-xs font-mono text-slate-500">${l.hwid ? l.hwid.substr(0,16)+'...' : '<span class="text-slate-700 italic">Unlinked</span>'}</td>
+                        <td class="px-8 py-6">
+                            <span class="status-badge px-3 py-1 rounded-full ${getStatusStyle(l.status)}">
+                                ${l.status}
+                            </span>
+                        </td>
+                        <td class="px-8 py-6 text-sm text-slate-400">${new Date(l.expiry).toLocaleDateString()}</td>
+                        <td class="px-8 py-6 text-right">
+                            <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                ${l.hwid ? `<button onclick="resetHWID('${l.key}')" title="Reset Hardware ID" class="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white transition-all"><i class="fas fa-rotate"></i></button>` : ''}
+                                <button class="w-9 h-9 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"><i class="fas fa-trash-can"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
         }
 
         function getStatusStyle(status) {
