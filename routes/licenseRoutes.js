@@ -11,5 +11,6 @@ router.post('/sync', licenseController.sync);
 router.get('/admin/list', authMiddleware, licenseController.list);
 router.post('/admin/generate', authMiddleware, licenseController.generate);
 router.post('/admin/reset', authMiddleware, licenseController.reset);
+router.get('/admin/logs', authMiddleware, licenseController.logs);
 
 module.exports = router;

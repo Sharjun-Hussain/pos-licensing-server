@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inzeedo Activity Logs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary: #10b981;
+            --primary-glow: rgba(16, 185, 129, 0.3);
+            --bg: #020617;
+            --surface: #0f172a;
+        }
+
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background: var(--bg); 
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .glass { 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(16px); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glow-bg {
+            background: radial-gradient(circle at 50% 50%, #064e3b 0%, #020617 70%);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 15px var(--primary-glow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+        @keyframes pulse-emerald {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .active-pulse {
+            animation: pulse-emerald 2s infinite;
+        }
+
+        .toast {
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen glow-bg">
+    
+    <!-- Auth Guard -->
+    <div id="auth-guard" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950">
+        <div class="text-center">
+            <div class="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-slate-400">Verifying session...</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="dashboard" class="hidden">
+        <nav class="glass border-b border-white/5 sticky top-0 z-50 px-10 py-5 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <a href="admin.html" class="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center hover:bg-emerald-500 transition-all text-white">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="text-lg font-bold">Activity Logs</h1>
+                    <p class="text-[10px] text-emerald-500 uppercase tracking-widest font-bold">System Monitoring</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-6">
+                <button onclick="logout()" class="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all">
+                    <i class="fas fa-power-off"></i>
+                </button>
+            </div>
+        </nav>
+
+        <main class="p-10 space-y-10 w-full">
+            <div class="flex flex-col md:flex-row justify-between items-end gap-6">
+                <div class="space-y-1">
+                    <h2 class="text-3xl font-bold">Security Audit Trail</h2>
+                    <p class="text-slate-400">Historical record of license activations and sync events</p>
+                </div>
+                <button onclick="loadLogs()" class="glass px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-white/5 transition-all">
+                    <i class="fas fa-rotate"></i> Refresh Logs
+                </button>
+            </div>
+
+            <div class="glass rounded-3xl overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-white/5 border-b border-white/5">
+                            <tr>
+                                <th class="px-8 py-5 text-[10px] uppercase font-bold text-slate-500 tracking-[2px]">Timestamp</th>
+                                <th class="px-8 py-5 text-[10px] uppercase font-bold text-slate-500 tracking-[2px]">License Key</th>
+                                <th class="px-8 py-5 text-[10px] uppercase font-bold text-slate-500 tracking-[2px]">Organization / User</th>
+                                <th class="px-8 py-5 text-[10px] uppercase font-bold text-slate-500 tracking-[2px]">Hardware ID</th>
+                                <th class="px-8 py-5 text-[10px] uppercase font-bold text-slate-500 tracking-[2px]">Action</th>
+                                <th class="px-8 py-5 text-[10px] uppercase font-bold text-slate-500 tracking-[2px]">IP Address</th>
+                                <th class="px-8 py-5 text-[10px] uppercase font-bold text-slate-500 tracking-[2px]">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-table" class="divide-y divide-white/5">
+                            <!-- Log rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed bottom-10 right-10 z-[200] flex flex-col gap-3"></div>
+
+    <script>
+        let token = localStorage.getItem('admin_token');
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            const color = type === 'success' ? 'emerald' : 'red';
+            
+            toast.className = `toast glass p-4 rounded-2xl flex items-center gap-4 min-w-[300px] border-${color}-500/30`;
+            toast.innerHTML = `
+                <div class="w-10 h-10 rounded-xl bg-${color}-500/10 flex items-center justify-center text-${color}-500">
+                    <i class="fas ${icon}"></i>
+                </div>
+                <div class="flex-1 text-sm font-medium">${msg}</div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        function logout() {
+            localStorage.removeItem('admin_token');
+            location.href = 'admin.html';
+        }
+
+        async function init() {
+            if (!token) {
+                location.href = 'admin.html';
+                return;
+            }
+            document.getElementById('auth-guard').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            loadLogs();
+        }
+
+        async function loadLogs() {
+            try {
+                const res = await fetch('/admin/logs', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (res.status === 401) {
+                    logout();
+                    return;
+                }
+
+                const data = await res.json();
+                if (data.success) {
+                    renderLogsTable(data.logs);
+                } else {
+                    showToast(data.message || 'Failed to load logs', 'error');
+                }
+            } catch (err) {
+                console.error('Failed to load logs', err);
+                showToast('Server connection failed', 'error');
+            }
+        }
+
+        function renderLogsTable(logs) {
+            const tbody = document.getElementById('logs-table');
+            let html = '';
+
+            if (!logs || logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="px-8 py-10 text-center text-slate-500 italic">No activity logs recorded yet.</td></tr>';
+                return;
+            }
+
+            logs.forEach(log => {
+                const statusColor = log.status === 'success' ? 'text-emerald-500 bg-emerald-500/10' : 'text-red-500 bg-red-500/10';
+                const actionIcon = log.action === 'activate' ? 'fa-bolt' : (log.action === 'sync' ? 'fa-sync' : 'fa-info-circle');
+                
+                html += `
+                    <tr class="hover:bg-white/[0.02] transition-all">
+                        <td class="px-8 py-5 text-xs text-slate-500">
+                            ${new Date(log.createdAt).toLocaleString()}
+                        </td>
+                        <td class="px-8 py-5">
+                            <span class="font-mono font-bold text-emerald-400 bg-emerald-500/5 px-2 py-1 rounded text-xs">${log.licenseKey}</span>
+                        </td>
+                        <td class="px-8 py-5">
+                            <div class="text-sm font-medium text-slate-300">${log.organizationName || 'N/A'}</div>
+                            <div class="text-[10px] text-slate-500">${log.userEmail || ''}</div>
+                        </td>
+                        <td class="px-8 py-5 text-xs font-mono text-slate-500">
+                            ${log.hwid ? log.hwid.substr(0, 12) + '...' : '---'}
+                        </td>
+                        <td class="px-8 py-5">
+                            <div class="flex items-center gap-2 text-xs uppercase font-bold tracking-wider text-slate-400">
+                                <i class="fas ${actionIcon} text-[10px]"></i>
+                                ${log.action}
+                            </div>
+                        </td>
+                        <td class="px-8 py-5 text-xs font-mono text-slate-500">
+                            ${log.ipAddress || 'Unknown'}
+                        </td>
+                        <td class="px-8 py-5">
+                            <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColor}">
+                                ${log.status}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        init();
+    </script>
+</body>
+</html>

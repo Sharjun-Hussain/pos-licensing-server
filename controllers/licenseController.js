@@ -1,4 +1,5 @@
 const License = require('../models/License');
+const ActivationLog = require('../models/ActivationLog');
 const forge = require('node-forge');
 const fs = require('fs');
 const path = require('path');
@@ -18,6 +19,26 @@ try {
 }
 
 /**
+ * Helper to log license activities
+ */
+const logActivity = async (req, license, action, status, message) => {
+    try {
+        await ActivationLog.create({
+            licenseKey: license ? license.key : (req.body.licenseKey || 'UNKNOWN'),
+            hwid: req.body.hwid || 'UNKNOWN',
+            ipAddress: req.ip,
+            action,
+            status,
+            message,
+            userEmail: license ? license.customerEmail : null,
+            organizationName: license ? license.organizationName : null
+        });
+    } catch (err) {
+        console.error('Logging error:', err);
+    }
+};
+
+/**
  * Validates the license and signs a certificate for the client
  */
 exports.activate = async (req, res) => {
@@ -31,15 +52,18 @@ exports.activate = async (req, res) => {
         const license = await License.findOne({ where: { key: licenseKey } });
 
         if (!license) {
+            await logActivity(req, null, 'activate', 'failure', 'License key not found');
             return res.status(404).json({ success: false, message: 'License key not found. Please check your spelling.' });
         }
 
         // Validation Logic
         if (license.status === 'revoked') {
+            await logActivity(req, license, 'activate', 'failure', 'License revoked');
             return res.status(403).json({ success: false, message: 'This license has been revoked. Contact support.' });
         }
 
         if (license.hwid && license.hwid !== hwid) {
+            await logActivity(req, license, 'activate', 'failure', 'Hardware ID mismatch');
             return res.status(403).json({ success: false, message: 'This license is already active on another device.' });
         }
 
@@ -47,6 +71,7 @@ exports.activate = async (req, res) => {
         if (license.expiry && new Date(license.expiry) < now) {
             license.status = 'expired';
             await license.save();
+            await logActivity(req, license, 'activate', 'failure', 'License expired');
             return res.status(403).json({ success: false, message: 'Your license expired on ' + new Date(license.expiry).toLocaleDateString() });
         }
 
@@ -75,6 +100,7 @@ exports.activate = async (req, res) => {
         md.update(payload, 'utf8');
         const signature = forge.util.encode64(privateKey.sign(md));
 
+        await logActivity(req, license, 'activate', 'success', 'License activated successfully');
         console.log(`✅ Activated: ${licenseKey} for HWID: ${hwid}`);
         return res.json({ success: true, certificate: { payload, signature } });
 
@@ -96,6 +122,7 @@ exports.sync = async (req, res) => {
         const license = await License.findOne({ where: { key: licenseKey, hwid: hwid } });
         
         if (!license || license.status !== 'active') {
+            await logActivity(req, license, 'sync', 'failure', 'Invalid or inactive license');
             return res.status(403).json({ success: false, message: 'Invalid or inactive license.' });
         }
 
@@ -111,6 +138,7 @@ exports.sync = async (req, res) => {
         md.update(payload, 'utf8');
         const signature = forge.util.encode64(privateKey.sign(md));
 
+        await logActivity(req, license, 'sync', 'success', 'License synced successfully');
         return res.json({ success: true, certificate: { payload, signature } });
     } catch (error) {
         console.error('Sync error:', error);
@@ -198,5 +226,21 @@ exports.reset = async (req, res) => {
     } catch (err) {
         console.error('Reset error:', err);
         return res.status(500).json({ success: false, message: 'Failed to reset hardware lock.' });
+    }
+};
+
+/**
+ * Fetches all activation logs for the Admin Dashboard
+ */
+exports.logs = async (req, res) => {
+    try {
+        const logs = await ActivationLog.findAll({
+            order: [['createdAt', 'DESC']],
+            limit: 1000
+        });
+        return res.json({ success: true, logs });
+    } catch (err) {
+        console.error('Logs fetch error:', err);
+        return res.status(500).json({ success: false, message: 'Failed to fetch logs.' });
     }
 };
