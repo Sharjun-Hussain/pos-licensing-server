@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "vps-setup": "bash scripts/setup_license_vps.sh"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
